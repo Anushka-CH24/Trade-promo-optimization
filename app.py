@@ -1,4 +1,5 @@
 """
+
 app.py
 ------
 Trade Promotion & Demand Analytics dashboard.
@@ -10,6 +11,10 @@ Tab 3 - Supply Chain Impact : stores/SKUs at risk of stockout during promos
 
 Run with:  streamlit run app.py
 """
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+
 import sys
 from pathlib import Path
 import sqlite3
