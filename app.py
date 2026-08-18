@@ -1,12 +1,11 @@
 """
-
 app.py
 ------
 Trade Promotion & Demand Analytics dashboard.
 
 Tab 1 - Commercial Overview : KPIs, top SKUs, promo lift summary
 Tab 2 - Scenario Planner    : pick a SKU, slide a discount, see predicted
-                               volume, stockout risk, and net promo ROI
+                              volume, stockout risk, and net promo ROI
 Tab 3 - Supply Chain Impact : stores/SKUs at risk of stockout during promos
 
 Run with:  streamlit run app.py
@@ -15,14 +14,38 @@ import sys
 import os
 from pathlib import Path
 
-# Add project root and 'src' folder to Python path dynamically
-BASE_DIR = Path(__file__).resolve().parent
-SRC_DIR = BASE_DIR / "src"
-DATA_DIR = BASE_DIR / "data"
-MODEL_DIR = BASE_DIR / "models"
+# ---------------------------------------------------------------------------
+# Dynamic Path Resolution (Prevents FileNotFoundError & ModuleNotFoundError)
+# ---------------------------------------------------------------------------
+ROOT_DIR = Path(__file__).resolve().parent
 
-sys.path.append(str(BASE_DIR))
-sys.path.append(str(SRC_DIR))
+# Search candidates for source code
+src_candidates = [
+    ROOT_DIR,
+    ROOT_DIR / "src",
+    ROOT_DIR / "trade-promo-project",
+    ROOT_DIR / "trade-promo-project" / "src",
+    ROOT_DIR / "trade-promo-project" / "trade-promo-project" / "src",
+]
+for p in src_candidates:
+    if p.exists() and str(p) not in sys.path:
+        sys.path.append(str(p))
+
+# Search candidates for data files (checks for dim_stores.csv)
+data_candidates = [
+    ROOT_DIR / "data",
+    ROOT_DIR / "trade-promo-project" / "data",
+    ROOT_DIR / "trade-promo-project" / "trade-promo-project" / "data",
+]
+DATA_DIR = next((p for p in data_candidates if (p / "dim_stores.csv").exists()), ROOT_DIR / "data")
+
+# Search candidates for model files (checks for xgb_promo_model.json)
+model_candidates = [
+    ROOT_DIR / "models",
+    ROOT_DIR / "trade-promo-project" / "models",
+    ROOT_DIR / "trade-promo-project" / "trade-promo-project" / "models",
+]
+MODEL_DIR = next((p for p in model_candidates if (p / "xgb_promo_model.json").exists()), ROOT_DIR / "models")
 
 import sqlite3
 import json
