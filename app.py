@@ -13,25 +13,28 @@ Run with:  streamlit run app.py
 """
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-
-import sys
 from pathlib import Path
+
+# Add project root and 'src' folder to Python path dynamically
+BASE_DIR = Path(__file__).resolve().parent
+SRC_DIR = BASE_DIR / "src"
+DATA_DIR = BASE_DIR / "data"
+MODEL_DIR = BASE_DIR / "models"
+
+sys.path.append(str(BASE_DIR))
+sys.path.append(str(SRC_DIR))
+
 import sqlite3
 import json
-
 import numpy as np
 import pandas as pd
 import streamlit as st
 import xgboost as xgb
 import plotly.express as px
 
-sys.path.append(str(Path(__file__).resolve().parent / "src"))
+# Imports from src/
 from features import build_feature_frame, encode_for_model
 from roi_logic import net_promo_roi
-
-DATA_DIR = Path(__file__).resolve().parent / "data"
-MODEL_DIR = Path(__file__).resolve().parent / "models"
 
 st.set_page_config(page_title="Trade Promotion & Demand Analytics", layout="wide")
 
