@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.streamlit/secrets.toml
+.DS_Store
+*.log
+
+# regenerated locally by src/sql_pipeline.py -- too large for git (150MB+),
+# and committing it would go stale vs. the parquet source of truth anyway
+data/trade_promo.db
+
