@@ -5,39 +5,62 @@ Trade Promotion & Demand Analytics dashboard.
 
 Tab 1 - Commercial Overview : KPIs, top SKUs, promo lift summary
 Tab 2 - Scenario Planner    : pick a SKU, slide a discount, see predicted
-                               volume, stockout risk, and net promo ROI
+                              volume, stockout risk, and net promo ROI
 Tab 3 - Supply Chain Impact : stores/SKUs at risk of stockout during promos
 
 Run with:  streamlit run app.py
-
-Note on data: the SQLite database is built IN MEMORY at startup from
-data/retail_scanner_raw.parquet (which is committed to the repo). We do
-NOT depend on a pre-built data/trade_promo.db file -- that file is ~150MB,
-over GitHub's 100MB file limit, so it's git-ignored and can never be
-pushed. Building it fresh from the parquet on every app start keeps the
-deployed app self-contained and avoids relying on a file that can't exist
-on the server.
 """
 import sys
+import os
 from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Dynamic Path Resolution (Prevents FileNotFoundError & ModuleNotFoundError)
+# ---------------------------------------------------------------------------
+ROOT_DIR = Path(__file__).resolve().parent
+
+# Search candidates for source code
+src_candidates = [
+    ROOT_DIR,
+    ROOT_DIR / "src",
+    ROOT_DIR / "trade-promo-project",
+    ROOT_DIR / "trade-promo-project" / "src",
+    ROOT_DIR / "trade-promo-optimization",
+    ROOT_DIR / "trade-promo-optimization" / "src",
+]
+for p in src_candidates:
+    if p.exists() and str(p) not in sys.path:
+        sys.path.append(str(p))
+
+# Search candidates for data files (checks for dim_stores.csv)
+data_candidates = [
+    ROOT_DIR / "data",
+    ROOT_DIR / "trade-promo-project" / "data",
+    ROOT_DIR / "trade-promo-optimization" / "data",
+    ROOT_DIR.parent / "data",
+]
+DATA_DIR = next((p for p in data_candidates if (p / "dim_stores.csv").exists()), ROOT_DIR / "data")
+
+# Search candidates for model files (checks for xgb_promo_model.json)
+model_candidates = [
+    ROOT_DIR / "models",
+    ROOT_DIR / "trade-promo-project" / "models",
+    ROOT_DIR / "trade-promo-optimization" / "models",
+    ROOT_DIR.parent / "models",
+]
+MODEL_DIR = next((p for p in model_candidates if (p / "xgb_promo_model.json").exists()), ROOT_DIR / "models")
+
 import sqlite3
 import json
-
 import numpy as np
 import pandas as pd
 import streamlit as st
 import xgboost as xgb
 import plotly.express as px
 
-ROOT_DIR = Path(__file__).resolve().parent
-SRC_DIR = ROOT_DIR / "src"
-DATA_DIR = ROOT_DIR / "data"
-MODEL_DIR = ROOT_DIR / "models"
-
-sys.path.append(str(SRC_DIR))
+# Imports from src/
 from features import build_feature_frame, encode_for_model
 from roi_logic import net_promo_roi
-from sql_pipeline import load_raw_tables, build_views  # reuse, don't duplicate
 
 st.set_page_config(page_title="Trade Promotion & Demand Analytics", layout="wide")
 
@@ -47,12 +70,7 @@ st.set_page_config(page_title="Trade Promotion & Demand Analytics", layout="wide
 # ---------------------------------------------------------------------------
 @st.cache_resource
 def get_connection():
-    """Build the SQLite DB in memory from the committed parquet file --
-    no dependency on a pre-built .db file that isn't (and can't be) in git."""
-    conn = sqlite3.connect(":memory:", check_same_thread=False)
-    load_raw_tables(conn)
-    build_views(conn)
-    return conn
+    return sqlite3.connect(DATA_DIR / "trade_promo.db", check_same_thread=False)
 
 
 @st.cache_data
